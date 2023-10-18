@@ -25,30 +25,65 @@ public class ProductServiceImpl implements ProductService {
         return (List<Product>) this.productRepository.findAll();
     }
 
+
+//    public ResponseEntity<Object> newProduct(Product product) {
+//
+//        data = new HashMap<>();
+//        Optional<Product> res = productRepository.findProductByName(product.getName());
+//
+//        if(res.isPresent() && product.getId()==null){
+//            data.put("error", true);
+//            data.put("message", "Ya existe un producto con ese nombre");
+//            return new ResponseEntity<>(
+//                    data,
+//                    HttpStatus.CONFLICT
+//            );
+//        }
+//        data.put("message", "Se guardo con éxito");
+//        if(product.getId()!= null) {
+//            data.put("message", "Se Actualizó con éxito");
+//        }
+//        productRepository.save(product);
+//        data.put("data", product);
+//        return new ResponseEntity<>(
+//                data,
+//                HttpStatus.CREATED
+//        );
+//    }
+
     @Override
-    public ResponseEntity<Object> newProduct(Product product) {
+    public ResponseEntity<Object> createProduct(Product product) {
+        Map<String, Object> data = new HashMap<>();
+        Optional<Product> existingProduct = productRepository.findProductByName(product.getName());
 
-        data = new HashMap<>();
-        Optional<Product> res = productRepository.findProductByName(product.getName());
-
-        if(res.isPresent() && product.getId()==null){
-            data.put("error", true);
-            data.put("message", "Ya existe un producto con ese nombre");
-            return new ResponseEntity<>(
-                    data,
-                    HttpStatus.CONFLICT
-            );
+        // Producto con el mismo nombre ya existe
+        if (existingProduct.isPresent()) {
+            data.put("message", "Producto creado con éxito");
+            return new ResponseEntity<>(data, HttpStatus.CONFLICT);
         }
-        data.put("message", "Se guardo con éxito");
-        if(product.getId()!= null) {
-            data.put("message", "Se Actualizó con éxito");
-        }
+        // Guarda el nuevo producto.
         productRepository.save(product);
+        data.put("message", "Producto creado con éxito");
         data.put("data", product);
-        return new ResponseEntity<>(
-                data,
-                HttpStatus.CREATED
-        );
+        return new ResponseEntity<>(data, HttpStatus.CREATED);
+    }
+
+    @Override
+    public ResponseEntity<Object> updateProduct(Product product) {
+        Map<String, Object> data = new HashMap<>();
+        Optional<Product> existingProduct = productRepository.findProductById(product.getId());;
+
+        // Producto no encontrado
+        if (!existingProduct.isPresent()) {
+            data.put("message", "Producto no existe.");
+            return new ResponseEntity<>(data, HttpStatus.NOT_FOUND);
+        }
+
+        // Realiza las actualizaciones necesarias en el producto existente (por ejemplo, nombre, precio, descripción, etc.).
+        productRepository.save(product);
+        data.put("message", "Producto actualizado con éxito");
+        data.put("data", product);
+        return new ResponseEntity<>(data, HttpStatus.OK);
     }
 
     @Override

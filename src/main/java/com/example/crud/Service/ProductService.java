@@ -9,7 +9,8 @@ public interface ProductService {
 
     public List<Product> getProducts();
 
-    ResponseEntity<Object> newProduct(Product product);
+    ResponseEntity<Object> createProduct(Product product);
+    ResponseEntity<Object> updateProduct(Product product);
 
     ResponseEntity<Object> deleteProduct(Long id);
 }
