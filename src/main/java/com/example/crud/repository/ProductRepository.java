@@ -1,17 +1,17 @@
 package com.example.crud.repository;
 
-import com.example.crud.models.Product;
+import com.example.crud.models.ProductEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
 
-    Optional<Product> findProductByName(String name);
+    Optional<ProductEntity> findProductByName(String name);
 
-    Optional<Product> findProductById(Long id);
+    Optional<ProductEntity> findProductById(Long id);
 
 
 }

@@ -1,16 +1,15 @@
 package com.example.crud.Service;
 
-import com.example.crud.models.Product;
+import com.example.crud.dto.ProductRequestDTO;
 import org.springframework.http.ResponseEntity;
 
-import java.util.List;
 
 public interface ProductService {
 
-    public List<Product> getProducts();
+    ResponseEntity<Object> getProducts();
 
-    ResponseEntity<Object> createProduct(Product product);
-    ResponseEntity<Object> updateProduct(Product product);
+    ResponseEntity<Object> createProduct(ProductRequestDTO productRequest);
+    ResponseEntity<Object> updateProduct(ProductRequestDTO productRequest);
 
     ResponseEntity<Object> deleteProduct(Long id);
 }

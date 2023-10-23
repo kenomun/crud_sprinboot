@@ -1,109 +1,134 @@
 package com.example.crud.Service;
 
-import com.example.crud.models.Product;
+import com.example.crud.dto.ProductRequestDTO;
+import com.example.crud.dto.ProductResponseDTO;
+import com.example.crud.models.ProductEntity;
+import com.example.crud.productMapper.ProductMapper;
 import com.example.crud.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductServiceImpl implements ProductService {
 
-    HashMap<String, Object> data;
-    private final ProductRepository productRepository;
-
+    HashMap<String, Object> response;
+    @Autowired
+    private ProductRepository productRepository;
     @Autowired
     public ProductServiceImpl(ProductRepository productRepository) {
         this.productRepository = productRepository;
     }
 
-    @Override
-    public List<Product> getProducts() {
-        return (List<Product>) this.productRepository.findAll();
-    }
-
-
-//    public ResponseEntity<Object> newProduct(Product product) {
-//
-//        data = new HashMap<>();
-//        Optional<Product> res = productRepository.findProductByName(product.getName());
-//
-//        if(res.isPresent() && product.getId()==null){
-//            data.put("error", true);
-//            data.put("message", "Ya existe un producto con ese nombre");
-//            return new ResponseEntity<>(
-//                    data,
-//                    HttpStatus.CONFLICT
-//            );
-//        }
-//        data.put("message", "Se guardo con éxito");
-//        if(product.getId()!= null) {
-//            data.put("message", "Se Actualizó con éxito");
-//        }
-//        productRepository.save(product);
-//        data.put("data", product);
-//        return new ResponseEntity<>(
-//                data,
-//                HttpStatus.CREATED
-//        );
-//    }
+    //----------------------------------------------
 
     @Override
-    public ResponseEntity<Object> createProduct(Product product) {
-        Map<String, Object> data = new HashMap<>();
-        Optional<Product> existingProduct = productRepository.findProductByName(product.getName());
+    public ResponseEntity<Object> getProducts() {
+        response = new HashMap<>();
+        try {
+            List<ProductEntity> productEntities = this.productRepository.findAll();
+            List<ProductResponseDTO> productResponseDTOs = productEntities.stream()
+                    .map(ProductMapper::toResponseDTO)
+                    .collect(Collectors.toList());
 
-        // Producto con el mismo nombre ya existe
-        if (existingProduct.isPresent()) {
-            data.put("message", "Producto creado con éxito");
-            return new ResponseEntity<>(data, HttpStatus.CONFLICT);
+            if (productEntities.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            response.put("message", "Productos encontrados");
+            response.put("data", productResponseDTOs);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (DataAccessException ex) {
+            response.put("message", "Error de conexión a la base de datos: " + ex.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        // Guarda el nuevo producto.
-        productRepository.save(product);
-        data.put("message", "Producto creado con éxito");
-        data.put("data", product);
-        return new ResponseEntity<>(data, HttpStatus.CREATED);
     }
 
+    //----------------------------------------------
     @Override
-    public ResponseEntity<Object> updateProduct(Product product) {
-        Map<String, Object> data = new HashMap<>();
-        Optional<Product> existingProduct = productRepository.findProductById(product.getId());;
+    public ResponseEntity<Object> createProduct(ProductRequestDTO productRequest) {
+        Optional<ProductEntity> existingProduct = productRepository.findProductByName(productRequest.getName());
+        response = new HashMap<>();
+
+        if (existingProduct.isPresent()) {
+            return new ResponseEntity<>("Producto con el mismo nombre ya existe", HttpStatus.CONFLICT);
+        } else {
+            try {
+                ProductEntity newProduct = ProductMapper.toEntity(productRequest);
+                productRepository.save(newProduct);
+                ProductResponseDTO newProductResponse = ProductMapper.toResponseDTO(newProduct);
+                response.put("message", "Producto creado con existo");
+                response.put("data", newProductResponse);
+
+                return new ResponseEntity<>(response, HttpStatus.CREATED);
+            } catch (DataIntegrityViolationException ex) {
+
+                response.put("message", "Error al crear el producto");
+                return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+    }
+
+
+    //----------------------------------------------
+
+    @Override
+    public ResponseEntity<Object> updateProduct(ProductRequestDTO productRequest) {
+        response = new HashMap<>();
+        Optional<ProductEntity> existingProduct = productRepository.findProductById(productRequest.getId());
 
         // Producto no encontrado
         if (!existingProduct.isPresent()) {
-            data.put("message", "Producto no existe.");
-            return new ResponseEntity<>(data, HttpStatus.NOT_FOUND);
+            response.put("message", "Producto no existe.");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
-        // Realiza las actualizaciones necesarias en el producto existente (por ejemplo, nombre, precio, descripción, etc.).
-        productRepository.save(product);
-        data.put("message", "Producto actualizado con éxito");
-        data.put("data", product);
-        return new ResponseEntity<>(data, HttpStatus.OK);
+        ProductEntity productToUpdate = existingProduct.get();
+
+        // Actualiza los campos name, price y date si se proporcionan en productRequest
+        if (productRequest.getName() != null) {
+            productToUpdate.setName(productRequest.getName());
+        }
+        if (productRequest.getPrice() != null) {
+            productToUpdate.setPrice(productRequest.getPrice());
+        }
+        if (productRequest.getDate() != null) {
+            productToUpdate.setDate(productRequest.getDate());
+        }
+
+        productRepository.save(productToUpdate);
+        response.put("message", "Producto actualizado con éxito");
+        response.put("data", ProductMapper.toResponseDTO(productToUpdate));
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+
+    //----------------------------------------------
 
     @Override
     public ResponseEntity<Object> deleteProduct(Long id) {
-        data = new HashMap<>();
+        response = new HashMap<>();
         boolean exist = this.productRepository.existsById(id);
 
         if(!exist) {
-            data.put("error", true);
-            data.put("message","No existe el producto");
+            response.put("error", true);
+            response.put("message","No existe el producto");
             return new ResponseEntity<>(
-                    data,
+                    response,
                     HttpStatus.CONFLICT
             );
         }
 
         productRepository.deleteById(id);
-        data.put("message","Producto eliminado exitosamente");
+        response.put("message","Producto eliminado exitosamente");
         return new ResponseEntity<>(
-                data,
+                response,
                 HttpStatus.ACCEPTED
 
         );

@@ -1,71 +1,49 @@
 package com.example.crud.models;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.Period;
 
 
 @Entity
-@Table
-public class Product {
+@Table(name = "product_entity")
+@Getter
+@Setter
+public class ProductEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="id")
     private Long id;
 
-    @Column (unique = true)
+    @Column (name="name" , unique = true)
     private String name;
+
+    @Column(name="price")
     private  Float price;
+
+    @Column(name="date")
     private  LocalDate date;
 
     @Transient
     private  int antiguedad;
 
-    public Product() {
+    public ProductEntity() {
     }
 
-    public Product(Long id, String name, Float price, LocalDate date) {
+    public ProductEntity(Long id, String name, Float price, LocalDate date) {
         this.id = id;
         this.name = name;
         this.price = price;
         this.date = date;
     }
 
-    public Product(String name, Float price, LocalDate date) {
+    public ProductEntity(String name, Float price, LocalDate date) {
         this.name = name;
         this.price = price;
-        this.date = date;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Float getPrice() {
-        return price;
-    }
-
-    public void setPrice(Float price) {
-        this.price = price;
-    }
-
-    public LocalDate getDate() {
-        return date;
-    }
-
-    public void setDate(LocalDate date) {
         this.date = date;
     }
 

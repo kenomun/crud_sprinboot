@@ -1,19 +1,18 @@
 package com.example.crud.controller;
 
 import com.example.crud.Service.ProductServiceImpl;
-import com.example.crud.models.Product;
+import com.example.crud.dto.ProductRequestDTO;
+
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 
 
 @RestController
@@ -21,12 +20,12 @@ import java.util.Objects;
 public class ProductController {
 
     private final ProductServiceImpl productService;
-
     @Autowired
     public ProductController(ProductServiceImpl productService){
         this.productService = productService;
     }
 
+    //----------------------------------------------
     @Operation(summary = "Servicio que lista los productos")
     @ApiResponses(
             value = {
@@ -38,16 +37,11 @@ public class ProductController {
             }
     )
     @GetMapping
-    public ResponseEntity<List<Product>> getProducts() {
-        List<Product> products = this.productService.getProducts();
-        if (products.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<>(products, HttpStatus.OK);
+    public ResponseEntity<Object> getProducts() {
+        return productService.getProducts();
     }
 
-
-
+    //----------------------------------------------
     @Operation(summary = "Agregar un nuevo producto")
     @ApiResponses(
             value = {
@@ -58,10 +52,12 @@ public class ProductController {
             }
     )
     @PostMapping
-    public ResponseEntity<Object> createProduct(@RequestBody Product product){
-        return this.productService.createProduct(product);
-
+    public ResponseEntity<Object> createProduct(@RequestBody ProductRequestDTO productRequest) {
+        ResponseEntity<Object> result = productService.createProduct(productRequest);
+        return new ResponseEntity<>(result.getBody(), result.getStatusCode());
     }
+
+    //----------------------------------------------
 
     @Operation(summary = "Editar un producto")
     @ApiResponses(
@@ -72,10 +68,12 @@ public class ProductController {
             }
     )
     @PutMapping
-    public ResponseEntity<Object> updateProduct(@RequestBody Product product){
-        return this.productService.updateProduct(product);
-
+    public ResponseEntity<Object> updateProduct(@RequestBody ProductRequestDTO productRequest){
+        ResponseEntity<Object> result = productService.updateProduct(productRequest);
+        return new ResponseEntity<>(result.getBody(), result.getStatusCode());
     }
+
+    //----------------------------------------------
 
     @Operation(summary = "Eliminar un producto")
     @ApiResponses(
