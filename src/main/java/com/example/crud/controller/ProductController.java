@@ -3,17 +3,23 @@ package com.example.crud.controller;
 import com.example.crud.Service.ProductServiceImpl;
 import com.example.crud.dto.ProductRequestDTO;
 
+import com.example.crud.models.ProductEntity;
+import com.example.crud.validation.ValidationUtils;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
+import javax.validation.Valid;
+import java.util.List;
 
 @RestController
 @RequestMapping(path = "api/V1/products")
@@ -24,6 +30,9 @@ public class ProductController {
     public ProductController(ProductServiceImpl productService){
         this.productService = productService;
     }
+
+    @Autowired
+    private ValidationUtils validationUtils;
 
     //----------------------------------------------
     @Operation(summary = "Servicio que lista los productos")
@@ -52,10 +61,21 @@ public class ProductController {
             }
     )
     @PostMapping
-    public ResponseEntity<Object> createProduct(@RequestBody ProductRequestDTO productRequest) {
+    public ResponseEntity<Object> createProduct(@Validated @RequestBody ProductRequestDTO productRequest, BindingResult bindingResult) {
+        ResponseEntity<Object> validationError = validationUtils.handleValidationErrors(bindingResult);
+        if (validationError != null) {
+            return validationError;
+        }
+
+        ProductEntity productEntity = new ProductEntity();
+        productEntity.setName(productRequest.getName()); // Asegúrate de establecer el nombre aquí
+
+        // Luego, guarda la entidad en la base de datos
         ResponseEntity<Object> result = productService.createProduct(productRequest);
+
         return new ResponseEntity<>(result.getBody(), result.getStatusCode());
     }
+
 
     //----------------------------------------------
 
@@ -68,7 +88,12 @@ public class ProductController {
             }
     )
     @PutMapping
-    public ResponseEntity<Object> updateProduct(@RequestBody ProductRequestDTO productRequest){
+    public ResponseEntity<Object> updateProduct(@Validated @RequestBody ProductRequestDTO productRequest, BindingResult bindingResult){
+        ResponseEntity<Object> validationError = validationUtils.handleValidationErrors(bindingResult);
+        if (validationError != null) {
+            return validationError;
+        }
+
         ResponseEntity<Object> result = productService.updateProduct(productRequest);
         return new ResponseEntity<>(result.getBody(), result.getStatusCode());
     }
